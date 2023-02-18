@@ -16,6 +16,25 @@ public class InventoryRepository : IInventoryRepository
             new Inventory{InventoryId = 4, InventoryName = "Bike Pedals", Quantity = 20, Price = 1 },
         };
     }
+
+    public  Task AddInventoryAsync(Inventory inventory)
+    {
+        if ( ExistsAsync(inventory).Result)
+        {
+            return Task.CompletedTask;
+        }
+        var maxId = _inventories.Max(x => x.InventoryId);
+        inventory.InventoryId = maxId + 1;
+        _inventories.Add(inventory);
+        return Task.CompletedTask;
+    }
+
+    public  Task<bool> ExistsAsync(Inventory inventory)
+    {
+        bool exists = _inventories.Any(x=>x.InventoryName.Equals(inventory.InventoryName, StringComparison.OrdinalIgnoreCase));
+        return Task.FromResult(exists);
+    }
+
     public async Task<IEnumerable<Inventory>> GetInventoriesByNameAsync(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
