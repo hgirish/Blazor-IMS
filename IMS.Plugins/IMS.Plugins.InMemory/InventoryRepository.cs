@@ -17,9 +17,9 @@ public class InventoryRepository : IInventoryRepository
         };
     }
 
-    public  Task AddInventoryAsync(Inventory inventory)
+    public Task AddInventoryAsync(Inventory inventory)
     {
-        if ( ExistsAsync(inventory).Result)
+        if (ExistsAsync(inventory).Result)
         {
             return Task.CompletedTask;
         }
@@ -29,9 +29,29 @@ public class InventoryRepository : IInventoryRepository
         return Task.CompletedTask;
     }
 
-    public  Task<bool> ExistsAsync(Inventory inventory)
+    public Task UpdateInventoryAsync(Inventory inventory)
     {
-        bool exists = _inventories.Any(x=>x.InventoryName.Equals(inventory.InventoryName, StringComparison.OrdinalIgnoreCase));
+        var existingInventory = _inventories.FirstOrDefault(x => x.InventoryId == inventory.InventoryId);
+        if (existingInventory == null)
+        {
+            return Task.CompletedTask;
+        }
+        // if Inventory Name exists with another Id, do not update
+        if (_inventories.Any(x => x.InventoryId != inventory.InventoryId &&
+        x.InventoryName.Equals(inventory.InventoryName, StringComparison.OrdinalIgnoreCase)))
+        {
+            return Task.CompletedTask;
+        }
+        existingInventory.InventoryName = inventory.InventoryName;
+        existingInventory.Quantity = inventory.Quantity;
+        existingInventory.Price = inventory.Price;
+
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> ExistsAsync(Inventory inventory)
+    {
+        bool exists = _inventories.Any(x => x.InventoryName.Equals(inventory.InventoryName, StringComparison.OrdinalIgnoreCase));
         return Task.FromResult(exists);
     }
 
@@ -43,5 +63,18 @@ public class InventoryRepository : IInventoryRepository
         }
         return _inventories.Where(x => x.InventoryName.Contains(name,
             StringComparison.OrdinalIgnoreCase));
+    }
+
+    public async Task<Inventory> GetInventoryByIdAsync(int inventoryId)
+    {
+        var inv = (_inventories.First(x => x.InventoryId == inventoryId));
+        var newInv = new Inventory
+        {
+            InventoryId = inv.InventoryId,
+            InventoryName = inv.InventoryName,
+            Price = inv.Price,
+            Quantity = inv.Quantity
+        };
+        return await Task.FromResult(newInv);
     }
 }
